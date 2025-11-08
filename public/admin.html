@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Alphabet Photo Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .letter-control {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .letter-display {
+            font-size: 4em;
+            font-weight: bold;
+            color: #667eea;
+            background: white;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .letter-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .letter-btn {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            font-size: 1.5em;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .letter-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .letter-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .submissions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .submission-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .submission-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .submission-card.pending {
+            border-left: 5px solid #ffc107;
+        }
+
+        .submission-card.approved {
+            border-left: 5px solid #28a745;
+        }
+
+        .submission-card.rejected {
+            border-left: 5px solid #dc3545;
+        }
+
+        .submission-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .submission-info {
+            margin-bottom: 15px;
+        }
+
+        .submission-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .submission-info strong {
+            color: #333;
+        }
+
+        .submission-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+        }
+
+        .btn-approve {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-approve:hover {
+            background: #218838;
+        }
+
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-reject:hover {
+            background: #c82333;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .winners-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .winner-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .winner-card h3 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Admin Panel</h1>
+            <p>Manage Alphabet Photo Game</p>
+        </div>
+
+        <div class="content">
+            <div id="message" class="message"></div>
+
+            <!-- Current Letter Section -->
+            <div class="section">
+                <h2>Current Letter</h2>
+                <div class="letter-control">
+                    <div class="letter-display" id="currentLetter">-</div>
+                    <div>
+                        <h3 style="margin-bottom: 15px;">Set New Letter:</h3>
+                        <div class="letter-selector" id="letterSelector"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Submissions Section -->
+            <div class="section">
+                <h2>Pending Submissions</h2>
+                <div id="submissionsContainer" class="submissions-grid">
+                    <div class="loading">Loading submissions...</div>
+                </div>
+            </div>
+
+            <!-- Winners Section -->
+            <div class="section">
+                <h2>Winners</h2>
+                <div id="winnersContainer" class="winners-list">
+                    <div class="loading">Loading winners...</div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="section">
+                <h2>View Results</h2>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="viewResults()" style="padding: 15px 30px; font-size: 1.1em;">
+                        📊 View Current Results
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = `${window.location.protocol}//${window.location.hostname}:${window.location.port || 4000}/api`;
+
+        // Generate letter buttons A-Z
+        function generateLetterButtons() {
+            const selector = document.getElementById('letterSelector');
+            for (let i = 65; i <= 90; i++) {
+                const letter = String.fromCharCode(i);
+                const btn = document.createElement('button');
+                btn.className = 'letter-btn';
+                btn.textContent = letter;
+                btn.onclick = () => setLetter(letter);
+                selector.appendChild(btn);
+            }
+        }
+
+        // Load current game state
+        async function loadGameState() {
+            try {
+                const response = await fetch(`${API_URL}/admin/state`);
+                const data = await response.json();
+                document.getElementById('currentLetter').textContent = data.current_letter || '-';
+                
+                // Highlight current letter button
+                const buttons = document.querySelectorAll('.letter-btn');
+                buttons.forEach(btn => {
+                    if (btn.textContent === data.current_letter) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            } catch (error) {
+                showMessage('Error loading game state: ' + error.message, 'error');
+            }
+        }
+
+        // Set new letter
+        async function setLetter(letter) {
+            try {
+                const response = await fetch(`${API_URL}/admin/set-letter`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ letter })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    showMessage(`Letter set to ${letter}`, 'success');
+                    loadGameState();
+                    loadSubmissions();
+                } else {
+                    showMessage(data.error || 'Failed to set letter', 'error');
+                }
+            } catch (error) {
+                showMessage('Error setting letter: ' + error.message, 'error');
+            }
+        }
+
+        // Load submissions
+        async function loadSubmissions() {
+            try {
+                const response = await fetch(`${API_URL}/admin/submissions?status=pending`);
+                const submissions = await response.json();
+
+                const container = document.getElementById('submissionsContainer');
+                if (submissions.length === 0) {
+                    container.innerHTML = '<div class="loading">No pending submissions</div>';
+                    return;
+                }
+
+                container.innerHTML = submissions.map(sub => {
+                    // Handle both S3 URLs and local paths
+                    const imageUrl = sub.image_path.startsWith('http') ? sub.image_path : `/${sub.image_path}`;
+                    return `
+                    <div class="submission-card pending">
+                        <span class="status-badge status-pending">${sub.status.toUpperCase()}</span>
+                        <img src="${imageUrl}" alt="${sub.submission_name}" class="submission-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'200\'%3E%3Crect fill=\'%23ddd\' width=\'300\' height=\'200\'/%3E%3Ctext fill=\'%23999\' font-family=\'sans-serif\' font-size=\'20\' dy=\'10.5\' font-weight=\'bold\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\'%3EImage Not Found%3C/text%3E%3C/svg%3E'">
+                        <div class="submission-info">
+                            <p><strong>Player:</strong> ${sub.player_name}</p>
+                            <p><strong>Submission:</strong> ${sub.submission_name}</p>
+                            <p><strong>Letter:</strong> ${sub.letter}</p>
+                            <p><strong>Submitted:</strong> ${new Date(sub.submitted_at).toLocaleString()}</p>
+                            ${sub.player_wallet ? `<p><strong>Wallet:</strong> ${sub.player_wallet.substring(0, 10)}...</p>` : ''}
+                        </div>
+                        <div class="submission-actions">
+                            <button class="btn btn-approve" onclick="approveSubmission(${sub.id}, true)">✓ Approve & Make Winner</button>
+                            <button class="btn btn-reject" onclick="approveSubmission(${sub.id}, false)">✗ Reject</button>
+                        </div>
+                    </div>
+                `;
+                }).join('');
+            } catch (error) {
+                document.getElementById('submissionsContainer').innerHTML = 
+                    '<div class="loading">Error loading submissions: ' + error.message + '</div>';
+            }
+        }
+
+        // Approve or reject submission
+        async function approveSubmission(id, approved) {
+            try {
+                const response = await fetch(`${API_URL}/admin/submission/${id}/approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ approved, notes: '' })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    showMessage(data.message || (approved ? 'Submission approved!' : 'Submission rejected'), 'success');
+                    loadSubmissions();
+                    loadWinners();
+                    
+                    // If approved, redirect to results page after a short delay
+                    if (approved) {
+                        setTimeout(() => {
+                            // Get current letter for results page
+                            const currentLetter = document.getElementById('currentLetter').textContent;
+                            window.location.href = `/results.html?letter=${currentLetter}`;
+                        }, 1500);
+                    }
+                } else {
+                    showMessage(data.error || 'Failed to update submission', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+
+        // Load winners
+        async function loadWinners() {
+            try {
+                const response = await fetch(`${API_URL}/winners`);
+                const winners = await response.json();
+
+                const container = document.getElementById('winnersContainer');
+                if (winners.length === 0) {
+                    container.innerHTML = '<div class="loading">No winners yet</div>';
+                    return;
+                }
+
+                container.innerHTML = winners.map(winner => `
+                    <div class="winner-card">
+                        <h3>${winner.letter}</h3>
+                        <p><strong>${winner.player_name}</strong></p>
+                        <p style="font-size: 0.9em; margin-top: 10px;">${new Date(winner.won_at).toLocaleString()}</p>
+                        ${winner.reward_distributed ? '<p style="margin-top: 10px;">✓ NFT Reward Sent</p>' : '<p style="margin-top: 10px;">⏳ Reward Pending</p>'}
+                    </div>
+                `).join('');
+            } catch (error) {
+                document.getElementById('winnersContainer').innerHTML = 
+                    '<div class="loading">Error loading winners: ' + error.message + '</div>';
+            }
+        }
+
+        // Show message
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type} show`;
+            setTimeout(() => {
+                messageEl.classList.remove('show');
+            }, 5000);
+        }
+
+        // View results page
+        function viewResults() {
+            const currentLetter = document.getElementById('currentLetter').textContent;
+            if (currentLetter && currentLetter !== '-') {
+                window.location.href = `/results.html?letter=${currentLetter}`;
+            } else {
+                showMessage('Please set a letter first', 'error');
+            }
+        }
+
+        // Initialize
+        generateLetterButtons();
+        loadGameState();
+        loadSubmissions();
+        loadWinners();
+
+        // Auto-refresh every 5 seconds
+        setInterval(() => {
+            loadSubmissions();
+            loadWinners();
+        }, 5000);
+    </script>
+</body>
+</html>
+

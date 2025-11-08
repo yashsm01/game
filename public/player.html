@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player - Alphabet Photo Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .current-letter {
+            font-size: 6em;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #f5576c;
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 20px auto;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #videoElement {
+            width: 100%;
+            display: block;
+        }
+
+        #canvasElement {
+            display: none;
+        }
+
+        .camera-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .preview-image {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 15px;
+            margin: 20px auto;
+            display: block;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .submissions-list {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .submission-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #f5576c;
+        }
+
+        .submission-item h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .submission-item img {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📸 Alphabet Photo Game</h1>
+            <div class="current-letter" id="currentLetter">-</div>
+            <p>Take a photo of something starting with this letter!</p>
+        </div>
+
+        <div class="content">
+            <div id="message" class="message"></div>
+
+            <!-- Submission Form -->
+            <div class="section" id="submissionSection">
+                <h2>Submit Your Photo</h2>
+                
+                <form id="submissionForm">
+                    <div class="form-group">
+                        <label for="playerName">Your Name *</label>
+                        <input type="text" id="playerName" required placeholder="Enter your name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="playerWallet">Wallet Address (Optional - for NFT reward)</label>
+                        <input type="text" id="playerWallet" placeholder="Enter your wallet address">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="submissionName">What is this? *</label>
+                        <input type="text" id="submissionName" required placeholder="e.g., Apple, Airplane, etc.">
+                    </div>
+
+                    <div class="camera-container">
+                        <video id="videoElement" autoplay playsinline></video>
+                        <canvas id="canvasElement"></canvas>
+                    </div>
+
+                    <div class="camera-controls">
+                        <button type="button" class="btn btn-secondary" id="startCameraBtn" onclick="startCamera()">📷 Start Camera</button>
+                        <button type="button" class="btn btn-primary hidden" id="captureBtn" onclick="capturePhoto()">📸 Capture Photo</button>
+                        <button type="button" class="btn btn-secondary hidden" id="retakeBtn" onclick="retakePhoto()">🔄 Retake</button>
+                    </div>
+
+                    <div id="previewContainer" class="hidden">
+                        <img id="previewImage" class="preview-image" alt="Preview">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="submitBtn" style="width: 100%; margin-top: 20px;" disabled>Submit Photo</button>
+                </form>
+            </div>
+
+            <!-- My Submissions -->
+            <div class="section">
+                <h2>My Submissions</h2>
+                <div id="submissionsContainer" class="submissions-list">
+                    <div class="loading">Loading your submissions...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = `${window.location.protocol}//${window.location.hostname}:${window.location.port || 4000}/api`;
+        let stream = null;
+        let capturedImage = null;
+
+        // Load current letter
+        async function loadCurrentLetter() {
+            try {
+                const response = await fetch(`${API_URL}/player/current-letter`);
+                const data = await response.json();
+                document.getElementById('currentLetter').textContent = data.letter || '-';
+                
+                if (!data.letter) {
+                    showMessage('No active game. Waiting for admin to start...', 'info');
+                }
+            } catch (error) {
+                showMessage('Error loading current letter: ' + error.message, 'error');
+            }
+        }
+
+        // Start camera
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment', // Use back camera on mobile
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                });
+                
+                const video = document.getElementById('videoElement');
+                video.srcObject = stream;
+                
+                document.getElementById('startCameraBtn').classList.add('hidden');
+                document.getElementById('captureBtn').classList.remove('hidden');
+                showMessage('Camera ready! Click capture to take a photo.', 'success');
+            } catch (error) {
+                showMessage('Error accessing camera: ' + error.message, 'error');
+                console.error('Camera error:', error);
+            }
+        }
+
+        // Capture photo
+        function capturePhoto() {
+            const video = document.getElementById('videoElement');
+            const canvas = document.getElementById('canvasElement');
+            const preview = document.getElementById('previewImage');
+            const previewContainer = document.getElementById('previewContainer');
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            // Convert to blob
+            canvas.toBlob((blob) => {
+                capturedImage = blob;
+                preview.src = canvas.toDataURL('image/jpeg');
+                previewContainer.classList.remove('hidden');
+                
+                // Stop camera
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+                }
+                
+                document.getElementById('captureBtn').classList.add('hidden');
+                document.getElementById('retakeBtn').classList.remove('hidden');
+                document.getElementById('submitBtn').disabled = false;
+            }, 'image/jpeg', 0.9);
+        }
+
+        // Retake photo
+        function retakePhoto() {
+            capturedImage = null;
+            document.getElementById('previewContainer').classList.add('hidden');
+            document.getElementById('retakeBtn').classList.add('hidden');
+            document.getElementById('submitBtn').disabled = true;
+            startCamera();
+        }
+
+        // Submit form
+        document.getElementById('submissionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!capturedImage) {
+                showMessage('Please capture a photo first', 'error');
+                return;
+            }
+
+            const playerName = document.getElementById('playerName').value;
+            const playerWallet = document.getElementById('playerWallet').value;
+            const submissionName = document.getElementById('submissionName').value;
+            const currentLetter = document.getElementById('currentLetter').textContent;
+
+            if (currentLetter === '-') {
+                showMessage('No active game. Please wait for admin to start.', 'error');
+                return;
+            }
+
+            // Validate that submission name starts with current letter
+            if (!submissionName.toUpperCase().startsWith(currentLetter)) {
+                showMessage(`Submission name must start with letter "${currentLetter}"`, 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', capturedImage, 'photo.jpg');
+            formData.append('playerName', playerName);
+            formData.append('playerWallet', playerWallet);
+            formData.append('submissionName', submissionName);
+            formData.append('letter', currentLetter);
+
+            try {
+                document.getElementById('submitBtn').disabled = true;
+                document.getElementById('submitBtn').textContent = 'Submitting...';
+
+                const response = await fetch(`${API_URL}/player/submit`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage(data.message || 'Submission received! Waiting for admin approval.', 'success');
+                    document.getElementById('submissionForm').reset();
+                    document.getElementById('previewContainer').classList.add('hidden');
+                    capturedImage = null;
+                    document.getElementById('retakeBtn').classList.add('hidden');
+                    document.getElementById('submitBtn').disabled = true;
+                    loadSubmissions();
+                } else {
+                    showMessage(data.error || 'Failed to submit', 'error');
+                    document.getElementById('submitBtn').disabled = false;
+                }
+
+                document.getElementById('submitBtn').textContent = 'Submit Photo';
+            } catch (error) {
+                showMessage('Error submitting: ' + error.message, 'error');
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('submitBtn').textContent = 'Submit Photo';
+            }
+        });
+
+        // Load player submissions
+        async function loadSubmissions() {
+            const playerName = document.getElementById('playerName').value;
+            if (!playerName) {
+                document.getElementById('submissionsContainer').innerHTML = 
+                    '<div class="loading">Enter your name to see submissions</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/player/submissions?playerName=${encodeURIComponent(playerName)}`);
+                const submissions = await response.json();
+
+                const container = document.getElementById('submissionsContainer');
+                if (submissions.length === 0) {
+                    container.innerHTML = '<div class="loading">No submissions yet</div>';
+                    return;
+                }
+
+                container.innerHTML = submissions.map(sub => {
+                    // Handle both S3 URLs and local paths
+                    const imageUrl = sub.image_path.startsWith('http') ? sub.image_path : `/${sub.image_path}`;
+                    return `
+                    <div class="submission-item">
+                        <h3>${sub.submission_name} (Letter: ${sub.letter})</h3>
+                        <p><strong>Submitted:</strong> ${new Date(sub.submitted_at).toLocaleString()}</p>
+                        <img src="${imageUrl}" alt="${sub.submission_name}" onerror="this.style.display='none'">
+                        <div>
+                            <span class="status-badge status-${sub.status}">${sub.status.toUpperCase()}</span>
+                        </div>
+                        ${sub.status === 'approved' ? '<p style="color: #28a745; margin-top: 10px; font-weight: bold;">🎉 You won! NFT reward will be sent to your wallet.</p>' : ''}
+                    </div>
+                `;
+                }).join('');
+            } catch (error) {
+                document.getElementById('submissionsContainer').innerHTML = 
+                    '<div class="loading">Error loading submissions: ' + error.message + '</div>';
+            }
+        }
+
+        // Show message
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type} show`;
+            setTimeout(() => {
+                messageEl.classList.remove('show');
+            }, 5000);
+        }
+
+        // Auto-refresh current letter
+        setInterval(loadCurrentLetter, 10000);
+
+        // Load submissions when name changes
+        document.getElementById('playerName').addEventListener('blur', loadSubmissions);
+
+        // Initialize
+        loadCurrentLetter();
+    </script>
+</body>
+</html>
+
