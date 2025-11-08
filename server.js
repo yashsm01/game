@@ -19,7 +19,13 @@ app.use(express.static('public'));
 if (process.env.VERCEL) {
   app.use(async (req, res, next) => {
     if (!dbInitialized && !req.path.startsWith('/api/health')) {
-      await initializeDatabase();
+      try {
+        await initializeDatabase();
+      } catch (error) {
+        console.error('[Server] Database initialization failed:', error.message);
+        // Don't block the request, but log the error
+        // The route handlers will handle database errors appropriately
+      }
     }
     next();
   });

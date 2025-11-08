@@ -20,10 +20,10 @@ module.exports = {
     }
   },
   production: {
-    username: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'Qaswedfr#1234',
-    database: process.env.DB_NAME || 'winner_app_db',
-    host: process.env.DB_HOST || 'database-1.cj2yei0scfob.ap-south-1.rds.amazonaws.com',
+    username: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    host: process.env.DB_HOST,
     port: parseInt(process.env.DB_PORT) || 5432,
     dialect: 'postgres',
     logging: false,

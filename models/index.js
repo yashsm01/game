@@ -39,11 +39,18 @@ try {
   }
 
   // Validate required dbConfig properties
-  if (!dbConfig.database || !dbConfig.username || !dbConfig.host) {
+  const missingFields = [];
+  if (!dbConfig.database) missingFields.push('DB_NAME');
+  if (!dbConfig.username) missingFields.push('DB_USER');
+  if (!dbConfig.host) missingFields.push('DB_HOST');
+  if (!dbConfig.password && env === 'production') missingFields.push('DB_PASSWORD');
+  
+  if (missingFields.length > 0) {
     throw new Error(
       `Database configuration is incomplete for environment: "${env}". ` +
-      `Missing: database=${!!dbConfig.database}, username=${!!dbConfig.username}, host=${!!dbConfig.host}. ` +
-      `Config keys: ${Object.keys(dbConfig).join(', ')}`
+      `Missing required environment variables: ${missingFields.join(', ')}. ` +
+      `Please set these in Vercel Dashboard → Settings → Environment Variables. ` +
+      `Current values: database=${dbConfig.database || 'MISSING'}, username=${dbConfig.username || 'MISSING'}, host=${dbConfig.host || 'MISSING'}`
     );
   }
 
