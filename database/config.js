@@ -1,4 +1,7 @@
-require('dotenv').config();
+// Only use dotenv if not on Vercel (Vercel injects env vars directly)
+if (!process.env.VERCEL) {
+  require('dotenv').config();
+}
 
 module.exports = {
   development: {

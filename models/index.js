@@ -1,52 +1,74 @@
 const { Sequelize } = require('sequelize');
-const config = require('../database/config');
 
-// Validate config is loaded
-if (!config) {
-  throw new Error('Database configuration file could not be loaded');
-}
+// Load and validate config with extensive error handling
+let config;
+let dbConfig;
+let sequelize;
 
-// On Vercel, default to production if NODE_ENV is not set
-const env = process.env.NODE_ENV || (process.env.VERCEL ? 'production' : 'development');
-const dbConfig = config[env];
-
-// Validate dbConfig exists
-if (!dbConfig) {
-  const availableEnvs = config ? Object.keys(config).join(', ') : 'none';
-  throw new Error(
-    `Database configuration not found for environment: "${env}". ` +
-    `NODE_ENV: "${process.env.NODE_ENV}", VERCEL: "${process.env.VERCEL}". ` +
-    `Available environments: ${availableEnvs}`
-  );
-}
-
-// Validate required dbConfig properties
-if (!dbConfig.database || !dbConfig.username || !dbConfig.host) {
-  throw new Error(
-    `Database configuration is incomplete for environment: "${env}". ` +
-    `Missing: database=${!!dbConfig.database}, username=${!!dbConfig.username}, host=${!!dbConfig.host}`
-  );
-}
-
-// Create Sequelize instance
-const sequelize = new Sequelize(
-  dbConfig.database,
-  dbConfig.username,
-  dbConfig.password,
-  {
-    host: dbConfig.host,
-    port: dbConfig.port,
-    dialect: dbConfig.dialect,
-    logging: dbConfig.logging,
-    dialectOptions: dbConfig.dialectOptions || {},
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000
-    }
+try {
+  config = require('../database/config');
+  
+  // Validate config is loaded and is an object
+  if (!config || typeof config !== 'object') {
+    throw new Error(`Database configuration file could not be loaded or is invalid. Type: ${typeof config}`);
   }
-);
+
+  // On Vercel, default to production if NODE_ENV is not set
+  const env = process.env.NODE_ENV || (process.env.VERCEL ? 'production' : 'development');
+  
+  // Log for debugging
+  console.log(`[DB Config] Environment: ${env}, NODE_ENV: ${process.env.NODE_ENV}, VERCEL: ${process.env.VERCEL}`);
+  console.log(`[DB Config] Available config keys: ${Object.keys(config).join(', ')}`);
+  
+  dbConfig = config[env];
+
+  // Validate dbConfig exists
+  if (!dbConfig || typeof dbConfig !== 'object') {
+    const availableEnvs = config ? Object.keys(config).join(', ') : 'none';
+    throw new Error(
+      `Database configuration not found for environment: "${env}". ` +
+      `NODE_ENV: "${process.env.NODE_ENV}", VERCEL: "${process.env.VERCEL}". ` +
+      `Available environments: ${availableEnvs}. ` +
+      `dbConfig type: ${typeof dbConfig}`
+    );
+  }
+
+  // Validate required dbConfig properties
+  if (!dbConfig.database || !dbConfig.username || !dbConfig.host) {
+    throw new Error(
+      `Database configuration is incomplete for environment: "${env}". ` +
+      `Missing: database=${!!dbConfig.database}, username=${!!dbConfig.username}, host=${!!dbConfig.host}. ` +
+      `Config keys: ${Object.keys(dbConfig).join(', ')}`
+    );
+  }
+
+  // Create Sequelize instance
+  sequelize = new Sequelize(
+    dbConfig.database,
+    dbConfig.username,
+    dbConfig.password,
+    {
+      host: dbConfig.host,
+      port: dbConfig.port,
+      dialect: dbConfig.dialect,
+      logging: dbConfig.logging,
+      dialectOptions: dbConfig.dialectOptions || {},
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+      }
+    }
+  );
+  
+  console.log(`[DB Config] Sequelize instance created successfully for database: ${dbConfig.database}`);
+} catch (error) {
+  console.error('[DB Config] Fatal error loading database configuration:', error);
+  console.error('[DB Config] Error stack:', error.stack);
+  // Re-throw with more context
+  throw new Error(`Failed to initialize database configuration: ${error.message}. Stack: ${error.stack}`);
+}
 
 // Import models
 const GameState = require('./GameState')(sequelize, Sequelize.DataTypes);
