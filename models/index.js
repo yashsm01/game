@@ -14,10 +14,15 @@ try {
   }
 
   // On Vercel, default to production if NODE_ENV is not set
-  const env = process.env.NODE_ENV || (process.env.VERCEL ? 'production' : 'development');
+  // Clean the environment variable - remove quotes and whitespace
+  let env = process.env.NODE_ENV || (process.env.VERCEL ? 'production' : 'development');
+  if (env) {
+    // Remove surrounding quotes and trim whitespace
+    env = env.toString().trim().replace(/^["']|["']$/g, '');
+  }
   
   // Log for debugging
-  console.log(`[DB Config] Environment: ${env}, NODE_ENV: ${process.env.NODE_ENV}, VERCEL: ${process.env.VERCEL}`);
+  console.log(`[DB Config] Raw NODE_ENV: "${process.env.NODE_ENV}", Cleaned env: "${env}", VERCEL: ${process.env.VERCEL}`);
   console.log(`[DB Config] Available config keys: ${Object.keys(config).join(', ')}`);
   
   dbConfig = config[env];
