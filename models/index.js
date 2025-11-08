@@ -1,8 +1,32 @@
 const { Sequelize } = require('sequelize');
 const config = require('../database/config');
 
-const env = process.env.NODE_ENV || 'development';
+// Validate config is loaded
+if (!config) {
+  throw new Error('Database configuration file could not be loaded');
+}
+
+// On Vercel, default to production if NODE_ENV is not set
+const env = process.env.NODE_ENV || (process.env.VERCEL ? 'production' : 'development');
 const dbConfig = config[env];
+
+// Validate dbConfig exists
+if (!dbConfig) {
+  const availableEnvs = config ? Object.keys(config).join(', ') : 'none';
+  throw new Error(
+    `Database configuration not found for environment: "${env}". ` +
+    `NODE_ENV: "${process.env.NODE_ENV}", VERCEL: "${process.env.VERCEL}". ` +
+    `Available environments: ${availableEnvs}`
+  );
+}
+
+// Validate required dbConfig properties
+if (!dbConfig.database || !dbConfig.username || !dbConfig.host) {
+  throw new Error(
+    `Database configuration is incomplete for environment: "${env}". ` +
+    `Missing: database=${!!dbConfig.database}, username=${!!dbConfig.username}, host=${!!dbConfig.host}`
+  );
+}
 
 // Create Sequelize instance
 const sequelize = new Sequelize(

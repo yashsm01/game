@@ -15,17 +15,31 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Configure AWS S3
-if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
-  console.error('❌ AWS credentials are required. Please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in your .env file');
-  process.exit(1);
+// Initialize database on first request (for Vercel serverless)
+if (process.env.VERCEL) {
+  app.use(async (req, res, next) => {
+    if (!dbInitialized && !req.path.startsWith('/api/health')) {
+      await initializeDatabase();
+    }
+    next();
+  });
 }
 
-aws.config.update({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION || 'eu-north-1'
-});
+// Configure AWS S3
+if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+  aws.config.update({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION || 'eu-north-1'
+  });
+} else {
+  console.error('❌ AWS credentials are required. Please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY');
+  if (!process.env.VERCEL) {
+    process.exit(1);
+  }
+  // On Vercel, we'll let it continue but S3 operations will fail
+  console.warn('⚠️  Continuing without AWS credentials - S3 operations will fail');
+}
 
 const s3 = new aws.S3();
 
@@ -70,19 +84,32 @@ const upload = multer({
 });
 
 // Initialize database
+let dbInitialized = false;
 async function initializeDatabase() {
+  if (dbInitialized) {
+    return true;
+  }
+  
   try {
     const connected = await testConnection();
     if (!connected) {
       console.error('Failed to connect to database. Please check your PostgreSQL configuration.');
-      process.exit(1);
+      if (!process.env.VERCEL) {
+        process.exit(1);
+      }
+      return false;
     }
     
     await syncDatabase(false); // Don't force sync in production
     console.log('✅ Database initialized successfully');
+    dbInitialized = true;
+    return true;
   } catch (error) {
     console.error('❌ Database initialization error:', error);
-    process.exit(1);
+    if (!process.env.VERCEL) {
+      process.exit(1);
+    }
+    return false;
   }
 }
 
@@ -517,14 +544,8 @@ async function startServer() {
   });
 }
 
-// Initialize database on module load for Vercel
-// This will run on cold starts
-if (process.env.VERCEL) {
-  // For Vercel, initialize database asynchronously
-  initializeDatabase().catch(error => {
-    console.error('Database initialization error on Vercel:', error);
-  });
-}
+// For Vercel serverless, we'll initialize database lazily on first request
+// Don't initialize on module load to avoid blocking function startup
 
 // For Vercel serverless functions
 module.exports = app;
